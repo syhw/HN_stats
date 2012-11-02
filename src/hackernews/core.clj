@@ -25,15 +25,31 @@
   (s/replace (s/replace 
                (s/replace text #"\n" " ") #"\t" " ") #"#\{[^}]*\}" " "))
 
+(defn remove-markup
+  " Remove HTML markup "
+  [text]
+  (s/replace text #"<[^>]*>" " "))
+
 (defn extract-article
   " Calls tika, hopefully with the right MIME (from headers), on the url "
   [article-json]
-  (let [url (:url (:item article-json))]
-    {:url url, :text (clean-text (:text (tika/parse url)))}))
+  (let [url (:url (:item article-json)),
+        domain (:domain (:item article-json))]
+    (if (= url nil)
+      {:url (str "http://news.ycombinator.com/item?id=" 
+                 (first (s/split (:_id (:item article-json)) #"-"))),
+       :domain domain,
+       :text (remove-markup (:text (:item article-json)))}
+      {:url url, 
+       :domain domain,
+       :text (clean-text (:text tika/parse url))})))
+      ;{:url url, :text (clean-text (:text (try (tika/parse url) 
+      ;                                     (catch Exception e (str "caught exception: " e)))))})))
 
 (defn write-down 
   [article]
-  (with-open [wrtr (writer (str folder-prefix (hash (:url article)) ".txt"))]
+  (with-open [wrtr (writer (str folder-prefix (:domain article)
+                                (hash (:url article)) ".txt"))]
     (.write wrtr (str (:url article) "\n"))
     (.write wrtr (:text article))))
 
@@ -41,11 +57,18 @@
 ; TEST (prn (:text (tika/parse "test/dataset_army_composition.pdf"))) doesn't work, pdf can't be read TODO ?
 ; TEST (write-down (extract-article (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true)))))
 
+;(clean-text (:text (tika/parse (:url (:item (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true))))))))
+;(extract-article (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true))))
+;(for [l (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 5)))) true))] (prn (str "item: " l)))
+;(map extract-article (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 5)))) true)))
+;(map write-down (map extract-article (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 5)))) true))))
+
 (defn -main [& args]
   (loop [start 0]
-    (map write-down (map extract-article (:results (parse-string (:body 
-        (http/get (format (encode-url hn-url :start 0 :limit 100)))) true)))))
+    (prn (str "pulling links from: " start " to " (+ start 100)))
+    (pmap (comp write-down extract-article) (:results (parse-string (:body 
+        (http/get (format (encode-url hn-url :start start :limit 100)))) true)))
     (if (< start 900)
       (recur (+ start 100))
-      ()))
+      ())))
 
