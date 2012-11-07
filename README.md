@@ -5,7 +5,13 @@ text corpus out of them.
 
 ## Usage
 
-lein run
+    lein run
+
+## Development
+
+If you use vimclojure with nailgun, you will need to give it more memory:
+
+    java -Xmx512m -Xms512m -cp "$LEIN_CLASSPATH" ...
 
 ## License
 
