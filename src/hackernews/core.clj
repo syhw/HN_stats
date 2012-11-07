@@ -11,6 +11,7 @@
 (def hn-url "http://api.thriftdb.com/api.hnsearch.com/items/_search?")
 (def folder-prefix "data/")
 (def textonly true)
+(def sortby "num_comments") ; points or num_comments
 
 (defn encode-url 
   [url & params]
@@ -70,7 +71,7 @@
   (loop [start 0]
     (prn (str "pulling links from: " start " to " (+ start 100)))
     (let [articles (:results (parse-string (:body 
-       (http/get (format (encode-url hn-url :start start :limit 100)))) true))]
+       (http/get (format (encode-url hn-url :start start :limit 100 :sortby sortby)))) true))]
       (pmap (comp write-down extract-article) articles)
       (prn (str "processed: " (count articles) " articles")))
     (if (< start 900)
