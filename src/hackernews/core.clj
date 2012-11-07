@@ -61,12 +61,6 @@
 ; TEST (prn (:text (tika/parse "test/dataset_army_composition.pdf"))) doesn't work, pdf can't be read TODO ?
 ; TEST (write-down (extract-article (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true)))))
 
-;(clean-text (:text (tika/parse (:url (:item (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true))))))))
-;(extract-article (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true))))
-;(for [l (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 5)))) true))] (prn (str "item: " l)))
-;(map extract-article (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 5)))) true)))
-;(map write-down (map extract-article (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 5)))) true))))
-
 (defn fetch-articles []
   (loop [start 0]
     (prn (str "pulling links from: " start " to " (+ start 100)))
