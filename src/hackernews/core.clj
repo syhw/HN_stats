@@ -2,7 +2,8 @@
   (:require [clojure.java.io :refer :all]
             [clojure.string :as s]
             [clj-http.client :as http]
-            [tika])
+            [tika]
+            [hackernews.name_recog :refer :all])
   (:import [java.net URLEncoder])
   (:use [cheshire.core])
   (:gen-class))
