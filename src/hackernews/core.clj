@@ -66,8 +66,10 @@
 (defn -main [& args]
   (loop [start 0]
     (prn (str "pulling links from: " start " to " (+ start 100)))
-    (pmap (comp write-down extract-article) (:results (parse-string (:body 
-        (http/get (format (encode-url hn-url :start start :limit 100)))) true)))
+    (let [articles (:results (parse-string (:body 
+        (http/get (format (encode-url hn-url :start start :limit 100)))) true))]
+      (pmap (comp write-down extract-article) articles)
+      (prn (str "processed: " (count articles) " articles")))
     (if (< start 900)
       (recur (+ start 100))
       ())))
