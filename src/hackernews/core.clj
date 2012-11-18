@@ -11,17 +11,21 @@
 (def hn-url "http://api.thriftdb.com/api.hnsearch.com/items/_search?")
 (def folder-prefix "data/")
 (def textonly true)
-(def sortby "num_comments desc") ; points or num_comments
+(def sortby ["num_comments desc" "points desc"]) ; points or num_comments
 (def stopwords (set (s/split (slurp "models/common-english-words.txt") #",")))
 
 (defn encode-url 
   [url & params]
   ; TEST (prn (encode-url hn-url :start 0 :limit 100))
+  ; TEST (prn (encode-url hn-url :start 0 :limit 100 :sortby "points desc" :username "pg"))
   (let [kwp (apply hash-map params)]
     (str url "sortby=" (URLEncoder/encode (get kwp :sortby "points desc")) 
          "&filter[field][type][]=submission&start=" (URLEncoder/encode 
                                                       (str (get kwp :start 0)))
-         "&limit=" (URLEncoder/encode (str (get kwp :limit 100))))))
+         "&limit=" (URLEncoder/encode (str (get kwp :limit 100)))
+         (if (get kwp :username) 
+           (str "&filter[fields][username][]=" (get kwp :username))
+           ""))))
 
 (defn clean-text
   " Removes \n \t and html fields that passed through tika (#{header}...) "
