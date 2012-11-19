@@ -9,6 +9,7 @@
                  [org.apache.mahout/mahout-math "0.7"]
                  [org.apache.mahout/mahout-utils "0.5"]
                  [incanter "1.3.0"]
-                 [clj-tika "1.1.0"]]
+                 [clj-tika "1.1.0"]
+                 [clj-time "0.4.4"]]
   :main "hackernews.core"
-  :jvm-opts ["-Xmx1024m"])
+  :jvm-opts ["-Xmx2048m"])

@@ -2,29 +2,38 @@
   (:require [clojure.java.io :refer :all]
             [clojure.string :as s]
             [clj-http.client :as http]
+            [clj-time.core :as t]
             [tika]
             [hackernews.name_recog :refer :all])
   (:import [java.net URLEncoder])
   (:use [cheshire.core])
   (:gen-class))
 
+; http://api.thriftdb.com/api.hnsearch.com/items/_search?filter[field][type][]=submission&start=0&limit=100&filter[fields][create_ts][]=[2010-08-01T00:00:00Z TO 2010-08-01T23:59:59Z]
 (def hn-url "http://api.thriftdb.com/api.hnsearch.com/items/_search?")
 (def folder-prefix "data/")
 (def textonly true)
-(def sortby ["num_comments desc" "points desc"]) ; points or num_comments
+(def sortby-list '("num_comments desc" "points desc"))
+; "score desc" = default of thriftdb: ponders points and num_comments equally
 (def stopwords (set (s/split (slurp "models/common-english-words.txt") #",")))
 
+
 (defn encode-url 
+  " Encodes the URL for the thrifdb API call with the given url and params "
   [url & params]
   ; TEST (prn (encode-url hn-url :start 0 :limit 100))
   ; TEST (prn (encode-url hn-url :start 0 :limit 100 :sortby "points desc" :username "pg"))
-  (let [kwp (apply hash-map params)]
-    (str url "sortby=" (URLEncoder/encode (get kwp :sortby "points desc")) 
+  ; TEST (prn (encode-url hn-url :start 0 :limit 100 :date-interval "[2010-08-01T00:00:00Z TO 2010-08-01T23:59:59Z]"))
+  (let [kwp (apply hash-map (flatten params))]
+    (str url "sortby=" (URLEncoder/encode (get kwp :sortby "score desc"))
          "&filter[field][type][]=submission&start=" (URLEncoder/encode 
                                                       (str (get kwp :start 0)))
          "&limit=" (URLEncoder/encode (str (get kwp :limit 100)))
          (if (get kwp :username) 
            (str "&filter[fields][username][]=" (get kwp :username))
+           "")
+         (if (get kwp :date-interval)
+           (str "&filter[fields][create_ts][]=" (get kwp :date-interval))
            ""))))
 
 (defn clean-text
@@ -89,25 +98,42 @@
        :domain domain,
        :text filtered-text})))
 
-(defn fetch-articles []
+(defn fetch-articles
+  " Fetches articles starting at start and using optional-args, 
+    to see what is allowed in optional args, look at encode-url "
+  [start & optional-args]
+  (let [_ (do (prn start) (prn optional-args))
+        articles (:results (parse-string (:body 
+     (http/get (format (encode-url hn-url :start start :limit 100 
+                                  optional-args)))) true))]
+        ;_ (prn articles)]
+    (pmap (comp write-down clean-article extract-article) articles) 
+    ; TODO test with map instead of pmap to remove timeouts/bugs
+    (prn (str "processed: " (count articles) " articles"))))
+
+(defn fetch-1000
+  " Simplifies fetching the top 1000 according to a sortby "
+  [sortby]
   (loop [start 0]
     (prn (str "pulling links from: " start " to " (+ start 100)))
-    (let [articles (:results (parse-string (:body 
-       (http/get (format (encode-url hn-url :start start :limit 100 :sortby sortby)))) true))]
-          ;_ (prn articles)]
-      (pmap (comp write-down clean-article extract-article) articles) ; TODO test with map to remove timeouts/bugs
-;      (prn (map extract-article articles))
-;      (prn (map (comp clean-article extract-article) articles))
-      (prn (str "processed: " (count articles) " articles")))
+    (fetch-articles start :sortby sortby)
     (if (< start 900)
       (recur (+ start 100))
       ())))
+
+(defn fetch-all []
+  " Currently takes the top 1000 by points and by num_comments 
+    + the top 100 according to thriftdb score for each day since Oct 9 2006 "
+  (do
+    (map fetch-1000 sortby-list)
+    (map (partial fetch-articles 0 :date-interval) 
+         (for [d (iterate #(t/plus % (t/days 1)) (t/date-time 2006 10 9)) :while (t/before? d (t/date-time 2012 11 18))] (str "[" d "+TO+" (t/plus d (t/days 1)) "]" ))
+         )))
 
 ; TEST (prn (:url (:item (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true)))))))
 ; TEST (prn (:text (tika/parse "test/dataset_army_composition.pdf"))) doesn't work, pdf can't be read TODO ?
 ; TEST (write-down (extract-article (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true)))))
 
 (defn -main [& args]
-  (do
-   (fetch-articles)
-    ))
+   (fetch-all)
+  )
