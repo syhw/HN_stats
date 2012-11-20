@@ -61,9 +61,9 @@
       {:url url, 
        :domain domain,
        :text (clean-text (:text (tika/parse url)))}))
-    (catch Exception e (prn "Exception: " (.getMessage e)))))
-      ;{:url url, :text (clean-text (:text (try (tika/parse url) 
-      ;                                     (catch Exception e (str "caught exception: " e)))))})))
+    (catch Exception e (prn "Exception in extract-article with url: "
+                            (:url (:item article-json))
+                                  " message: " (.getMessage e)))))
 
 (defn write-down
   [article]
@@ -73,7 +73,7 @@
     (if (= false textonly)
       (.write wrtr (str (:url article) "\n")))
     (.write wrtr (:text article)))
-    (catch Exception e (prn "Exception: " (.getMessage e)))))
+    (catch Exception e (prn "Exception in write-down: " (.getMessage e)))))
 
 (defn clean-article
   [article]
