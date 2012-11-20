@@ -16,7 +16,7 @@
 (def sortby-list '("num_comments desc" "points desc"))
 ; "score desc" = default of thriftdb: ponders points and num_comments equally
 (def stopwords (set (s/split (slurp "models/common-english-words.txt") #",")))
-
+(def pgarticles (s/split (slurp "list_articles_pg.txt") #"\n"))
 
 (defn encode-url 
   " Encodes the URL for the thrifdb API call with the given url and params "
@@ -48,22 +48,29 @@
   (s/replace text #"<[^>]*>" " "))
 
 (defn extract-article
-  " Calls tika, hopefully with the right MIME (from headers), on the url "
+  " Prepare the json of the article (from thrifdb) for extract-url "
   [article-json]
-  (try 
   (let [url (:url (:item article-json)),
         domain (:domain (:item article-json))]
-    (if (= nil url)
-      {:url (str "http://news.ycombinator.com/item?id=" 
-                 (first (s/split (:_id (:item article-json)) #"-"))),
-       :domain domain,
-       :text (remove-markup (:text (:item article-json)))}
-      {:url url, 
-       :domain domain,
-       :text (clean-text (:text (tika/parse url)))}))
-    (catch Exception e (prn "Exception in extract-article with url: "
-                            (:url (:item article-json))
-                                  " message: " (.getMessage e)))))
+    (try 
+      (if (= nil url)
+        {:url (str "http://news.ycombinator.com/item?id=" 
+                   (first (s/split (:_id (:item article-json)) #"-"))),
+         :domain domain,
+         :text (remove-markup (:text (:item article-json)))}
+        (extract-url [url domain]))
+      (catch Exception e (prn "Exception in extract-article with url: "
+                              url " message: " (.getMessage e))))))
+
+(defn extract-url
+  " Calls tika, hopefully with the right MIME (from headers), on the url "
+  [& [url-domain]]
+  (try 
+    {:url (first url-domain), 
+     :domain (second url-domain),
+     :text (clean-text (:text (tika/parse (first url-domain))))}
+    (catch Exception e (prn "Exception in extract-url with url: "
+                            (first url-domain) " message: " (.getMessage e)))))
 
 (defn write-down
   [article]
@@ -122,9 +129,13 @@
       ())))
 
 (defn fetch-all []
-  " Currently takes the top 1000 by points and by num_comments 
+  " Currently takes PG essays 
+    + the top 1000 of HN by points and by num_comments 
     + the top 100 according to thriftdb score for each day since Oct 9 2006 "
   (do
+    (map (comp write-down clean-article extract-url) 
+         (map (fn [a] [(str "http://paulgraham.com/" a) "paulgraham.com"]) 
+              pgarticles))
     (map fetch-1000 sortby-list)
     (map (partial fetch-articles 0 :date-interval) 
          (for [d (iterate #(t/plus % (t/days 1)) (t/date-time 2006 10 9)) :while (t/before? d (t/date-time 2012 11 18))] (str "[" d "+TO+" (t/plus d (t/days 1)) "]" ))
