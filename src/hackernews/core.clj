@@ -47,8 +47,18 @@
   [text]
   (s/replace text #"<[^>]*>" " "))
 
+(defn extract-url
+  " Calls tika, hopefully with the right MIME (from headers), on the url "
+  [& [url-domain]]
+  (try 
+    {:url (first url-domain), 
+     :domain (second url-domain),
+     :text (clean-text (:text (tika/parse (first url-domain))))}
+    (catch Exception e (prn "Exception in extract-url with url: "
+                            (first url-domain) " message: " (.getMessage e)))))
+
 (defn extract-article
-  " Prepare the json of the article (from thrifdb) for extract-url "
+  " Prepare the json of the article (from thriftdb) for extract-url "
   [article-json]
   (let [url (:url (:item article-json)),
         domain (:domain (:item article-json))]
@@ -61,16 +71,6 @@
         (extract-url [url domain]))
       (catch Exception e (prn "Exception in extract-article with url: "
                               url " message: " (.getMessage e))))))
-
-(defn extract-url
-  " Calls tika, hopefully with the right MIME (from headers), on the url "
-  [& [url-domain]]
-  (try 
-    {:url (first url-domain), 
-     :domain (second url-domain),
-     :text (clean-text (:text (tika/parse (first url-domain))))}
-    (catch Exception e (prn "Exception in extract-url with url: "
-                            (first url-domain) " message: " (.getMessage e)))))
 
 (defn write-down
   [article]
@@ -128,16 +128,24 @@
       (recur (+ start 100))
       ())))
 
+(defn fetch-loop-dates
+  [date-interv]
+  (loop [start 0]
+    (fetch-articles start :date-interval date-interv)
+    (if (< start 200)
+      (recur (+ start 100))
+      ())))
+
 (defn fetch-all []
   " Currently takes PG essays 
     + the top 1000 of HN by points and by num_comments 
-    + the top 100 according to thriftdb score for each day since Oct 9 2006 "
+    + the top 200 according to thriftdb score for each day since Oct 9 2006 "
   (do
     (map (comp write-down clean-article extract-url) 
          (map (fn [a] [(str "http://paulgraham.com/" a) "paulgraham.com"]) 
               pgarticles))
     (map fetch-1000 sortby-list)
-    (map (partial fetch-articles 0 :date-interval) 
+    (map fetch-loop-dates 
          (for [d (iterate #(t/plus % (t/days 1)) (t/date-time 2006 10 9)) :while (t/before? d (t/date-time 2012 11 18))] (str "[" d "+TO+" (t/plus d (t/days 1)) "]" ))
          )))
 
