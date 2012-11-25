@@ -76,13 +76,17 @@ if __name__ == "__main__":
 
     # transformations
     print corpus
-    #tfidf = models.TfidfModel(corpus)
+    tfidf = models.TfidfModel(corpus)
 
     #hdp = models.hdpmodel.HdpModel(corpus, id2word=dictionary)
     #hdp.print_topics(20)
     #print hdp
 
-    lda = models.ldamodel.LdaModel(corpus, id2word=dictionary, num_topics=20, update_every=1, chunksize=5000, passes=5)
-    lda.print_topics(20)
+    lda = models.ldamodel.LdaModel(corpus, id2word=dictionary, num_topics=100, update_every=1, chunksize=5000, passes=10)
+    lda2 = models.ldamodel.LdaModel(tfidf[corpus], id2word=dictionary, num_topics=100, update_every=1, chunksize=5000, passes=10)
+    lda.print_topics(30)
+    lda2.print_topics(30)
+    lda.save(directory + 'lda_bow.model')
+    lda2.save(directory + 'lda_tfidf.model')
 
 
