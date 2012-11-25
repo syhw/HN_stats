@@ -1,4 +1,4 @@
-import sys, bz2, glob, copy, pickle
+import sys, bz2, glob, pickle
 from gensim import utils, models
 from gensim.corpora.dictionary import Dictionary
 from gensim.corpora.textcorpus import TextCorpus
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     MmCorpus.serialize(outputname + '_bow.mm', corpus, progress_cnt=10000)
     print ">>> Saved MM corpus as " + outputname + "_bow.mm"
 
-    id2token = copy.deepcopy(corpus.dictionary)
+    id2token = Dictionary.load_from_text(outputname + '_wordids.txt')
     mm = MmCorpus(outputname + '_bow.mm')
     # tfidf = models.TfidfModel(mm, id2word=id2token, normalize=True)
     del corpus
