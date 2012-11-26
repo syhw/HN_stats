@@ -100,7 +100,7 @@ class WikiHNCorpus(TextCorpus):
                     yielded += 1
                     yield result
             else:
-                result = tokenize(text) # text into tokens here
+                result = tokenize(hn_text) # text into tokens here
                 positions += len(result)
                 yield result
 
