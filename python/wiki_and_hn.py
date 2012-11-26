@@ -7,7 +7,7 @@ from gensim.corpora.wikicorpus import filter_wiki
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-NO_BELOW = 20 # no word used less than 20 times
+NO_BELOW = 21 # no word used less than 42/2 times
 NO_ABOVE = 0.1 # no word which is in above 10% of the corpus
 VOCAB_SIZE = 200000 # 200k
 WIKI_ARTICLE_MIN_CHARS = 500
@@ -112,7 +112,7 @@ class WikiHNCorpus(TextCorpus):
                 yielded += 1
                 yield result
 
-        print (">>> finished iterating over HN corpus of %i documents with %i positions" % (wiki_articles, positions - positions_after_wiki))
+        print (">>> finished iterating over HN corpus of %i documents with %i positions" % (hn_articles, positions - positions_after_wiki))
         # ************ /HN articles ************
 
         self.length = wiki_articles + hn_articles # cache corpus length
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         sys.exit(-1)
     print ">>> Extracting articles..."
     corpus = WikiHNCorpus(
-        '/Volumes/Photos/wikipedia/10000/enwiki-latest-pages-articles1.xml-p000000010p000010000.bz2',
+        '/Volumes/Photos/wikipedia/enwiki-latest-pages-articles.xml.bz2',
         '/Users/gabrielsynnaeve/labs/clojure/hackernews/data')
 
     corpus.dictionary.save_as_text(outputname + '_wordids.txt')
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     del corpus
 
     lda = models.ldamodel.LdaModel(corpus=mm, id2word=id2token, 
-            num_topics=1000, update_every=1, chunksize=10000, passes=2)
+            num_topics=2000, update_every=1, chunksize=50000, passes=10)
 
     f = open(outputname + '.ldamodel', 'w')
     pickle.dump(lda, f)
