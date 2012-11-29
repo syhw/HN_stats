@@ -45,24 +45,30 @@ def topic_names(ldaobject):
         best10 = bests[topicid][:10]
         beststrl = [(topic[i], ldaobject.id2word[i]) for i in best10]
         beststr = ' + '.join(['%.3f*%s' % v for v in beststrl])
-        print "topic #", topicid, " described by word:", topicnames[topicid]
+        if LEMMATIZE:
+            print "topic #", topicid, " described by word:", topicnames[topicid].split('/')[0]
+        else:
+            print "topic #", topicid, " described by word:", topicnames[topicid]
         print beststr
 
-f = open('hn.ldamodel', 'r')
+f = None
+if LEMMATIZE:
+    f = open('hn_lemmatized.ldamodel', 'r')
+else:
+    f = open('hn.ldamodel', 'r')
 lda = pickle.load(f)
 topic_names(lda)
-import sys
-sys.exit(0)
 
-id2token = Dictionary.load_from_text('/Users/gabrielsynnaeve/Dropbox/Public/hn_wordids.txt')
 article = open('/Users/gabrielsynnaeve/labs/clojure/hackernews/data/99985.txt', 'r').read()
-#if LEMMATIZE:
-#    a = utils.lemmatize(article)
-#    print a
-#else:
-a = tokenize(article)
+
+a = None
+if LEMMATIZE:
+    a = utils.lemmatize(article)
+else:
+    a = tokenize(article)
 print a
-for topic, proba in lda[id2token.doc2bow(a)]:
+
+for topic, proba in lda[lda.id2word.doc2bow(a)]:
     print lda.show_topic(topic)
     print proba
 
