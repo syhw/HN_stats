@@ -26,15 +26,19 @@
   ; TEST (prn (encode-url hn-url :start 0 :limit 100 :date-interval "[2010-08-01T00:00:00Z TO 2010-08-01T23:59:59Z]"))
   (let [kwp (apply hash-map (flatten params))]
     (str url "sortby=" (URLEncoder/encode (get kwp :sortby "score desc"))
-         "&filter[field][type][]=submission&start=" (URLEncoder/encode 
-                                                      (str (get kwp :start 0)))
+         "&filter[field][type][]=" (get kwp :type "submission")
+         "&start=" (URLEncoder/encode (str (get kwp :start 0)))
          "&limit=" (URLEncoder/encode (str (get kwp :limit 100)))
          (if (get kwp :username) 
            (str "&filter[fields][username][]=" (get kwp :username))
            "")
          (if (get kwp :date-interval)
            (str "&filter[fields][create_ts][]=" (get kwp :date-interval))
-           ""))))
+           "")
+         (if (get kwp :username)
+           (str "&filter[fields][username][]=" (get kwp :username))
+           "")
+         )))
 
 (defn clean-text
   " Removes \n \t and html fields that passed through tika (#{header}...) "
@@ -51,7 +55,7 @@
   " Calls tika, hopefully with the right MIME (from headers), on the url "
   [& [url-domain]]
   (try 
-    {:url (first url-domain), 
+    {:id (first url-domain), 
      :domain (second url-domain),
      :text (clean-text (:text (tika/parse (first url-domain))))}
     (catch Exception e (prn "Exception in extract-url with url: "
@@ -61,30 +65,34 @@
   " Prepare the json of the article (from thriftdb) for extract-url "
   [article-json]
   (let [url (:url (:item article-json)),
-        domain (:domain (:item article-json))]
+        domain (:domain (:item article-json)),
+        id (:id (:item article-json))]
     (try 
       (if (= nil url)
-        {:url (str "http://news.ycombinator.com/item?id=" 
-                   (first (s/split (:_id (:item article-json)) #"-"))),
+        {:id id,
          :domain domain,
          :text (remove-markup (:text (:item article-json)))}
-        (extract-url [url domain]))
+        {:id id, 
+         :domain domain,
+         :text (:text (extract-url [url domain]))})
       (catch Exception e (prn "Exception in extract-article with url: "
                               url " message: " (.getMessage e))))))
 
 (defn write-down
   [article]
   (try
-  (with-open [wrtr (writer (str folder-prefix (:domain article)
-                                (hash (:url article)) ".txt"))]
+  (with-open [wrtr (writer ;(str folder-prefix (:domain article) (hash (:url article)) 
+                           (str folder-prefix (:id article) ; HN ID if HN link, url otherwise
+                           ".txt"))]
     (if (= false textonly)
-      (.write wrtr (str (:url article) "\n")))
+      (.write wrtr (str ;(:url article) "\n")))
+                        (:id article) "\n")))
     (.write wrtr (:text article)))
     (catch Exception e (prn "Exception in write-down: " (.getMessage e)))))
 
 (defn clean-article
   [article]
-  (let [url (:url article),
+  (let [id (:id article),
         domain (:domain article),
         text (:text article)]
     (defn remove-bad-NE ; NE stands for Named Entities
@@ -101,7 +109,7 @@
       (filter #(not (contains? stopwords %)) tokens))
     (let [filtered-text (s/join " " (remove-bad-NE (remove-stopwords (tokenize text))))]
           ;_ (prn filtered-text)]
-      {:url url,
+      {:id id,
        :domain domain,
        :text filtered-text})))
 
