@@ -87,8 +87,21 @@ if __name__ == '__main__':
     lda = models.ldamodel.LdaModel(corpus=mm, id2word=id2token, 
             num_topics=100, update_every=1, chunksize=10000, passes=5)
 
+
     f = open(outputname + '.ldamodel', 'w')
     pickle.dump(lda, f)
     lda.print_topics(-1)
+    f.close()
+
+    alpha = [i*0.1/100 for i in range(1,101)] # enforcing sparsity on topics
+    # with the first topic 100 less probable than the 100th
+    alpha /= sum(alpha)
+    lda_sparse = models.ldamodel.LdaModel(corpus=mm, id2word=id2token, 
+            num_topics=100, update_every=1, chunksize=10000, passes=5,
+            alpha=alpha)
+
+    f = open(outputname + '.ldasparsemodel', 'w')
+    pickle.dump(lda_sparse, f)
+    lda_sparse.print_topics(-1)
 
 
