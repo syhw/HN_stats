@@ -40,14 +40,8 @@ def topic_names(ldaobject):
             if ind == 0:
                 # if it's the first we keep the default
                 break
-            candidate = ldaobject.id2word[bests[topicid][ind]]
-            if len(candidate) > 2: # TODO here we only take words>2 in length
-                topicnames[topicid] = candidate
-                break
-            else:
-                ind += 1
-            continue
-
+            topicnames[topicid] = ldaobject.id2word[bests[topicid][ind]]
+            break
         best10 = bests[topicid][:10]
         beststrl = [(topic[i], ldaobject.id2word[i]) for i in best10]
         beststr = ' + '.join(['%.3f*%s' % v for v in beststrl])
@@ -56,8 +50,6 @@ def topic_names(ldaobject):
 
 f = open('hn.ldamodel', 'r')
 lda = pickle.load(f)
-#for i in range(100):
-#    print lda.print_topic(i)
 topic_names(lda)
 import sys
 sys.exit(0)
@@ -73,6 +65,4 @@ print a
 for topic, proba in lda[id2token.doc2bow(a)]:
     print lda.show_topic(topic)
     print proba
-
-#print lda[article]
 
