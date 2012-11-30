@@ -85,7 +85,7 @@ if __name__ == '__main__':
         del corpus
 
     lda = models.ldamodel.LdaModel(corpus=mm, id2word=id2token, 
-            num_topics=100, update_every=1, chunksize=10000, passes=5)
+            num_topics=40, update_every=1, chunksize=10000, passes=5)
 
 
     f = open(outputname + '.ldamodel', 'w')
@@ -93,12 +93,12 @@ if __name__ == '__main__':
     lda.print_topics(-1)
     f.close()
 
-    alpha = [i*0.1/100 for i in range(1,101)] # enforcing sparsity on topics
-    # with the first topic 100 less probable than the 100th
+    alpha = [i*0.1/40 for i in range(1,101)] # enforcing sparsity on topics
+    # with the first topic 40 less probable than the 40th
     div = sum(alpha)
     alpha = [x/div for x in alpha]
     lda_sparse = models.ldamodel.LdaModel(corpus=mm, id2word=id2token, 
-            num_topics=100, update_every=1, chunksize=10000, passes=5,
+            num_topics=40, update_every=1, chunksize=10000, passes=5,
             alpha=alpha)
 
     f = open(outputname + '.ldasparsemodel', 'w')
