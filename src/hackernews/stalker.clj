@@ -23,7 +23,7 @@
               (= (:id (:item submission)) (:id (:discussion a)))
               (= (:status (http/get (:url (:item submission)))) 200))
           (do
-            ((comp write-down clean-article extract-article) submission)
+            ((comp write-down clean-article extract-article) submission) ; TODO DEBUG THIS FUCK
             (:id (:item submission)))
           ""))
       (catch Exception e "")))
