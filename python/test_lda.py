@@ -1,6 +1,5 @@
 import pickle, numpy
 from gensim import utils, models
-from gensim.corpora.dictionary import Dictionary
 
 LEMMATIZE = utils.HAS_PATTERN
 
