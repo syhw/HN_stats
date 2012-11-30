@@ -25,8 +25,8 @@ with open(user + '.params') as f:
     user_params = pickle.load(f)
 
 # score \proto P(Like) 
-# P(Like) \propto \sum_{t \in Topics}[P(TopicsArticle)
-#                 * P(\lambda|t,TopicsArticle) * P(Topics|Like) * P(Like)]
+# P(Like=true) \propto \sum_{t \in Topics}[P(TopicsArticle)
+#                 * P(\lambda|t,TopicsArticle) * P(t|Like=true) * P(Like=true)]
 score = 0.0
 for topicid, proba in lda[lda.id2word.doc2bow(a)]:
     score += proba * user_params[topicid]
