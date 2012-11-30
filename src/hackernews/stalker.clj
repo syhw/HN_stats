@@ -4,7 +4,7 @@
             [clj-http.client :as http]
             [clj-time.core :as t]
             [tika]
-            [hackernews.core :refer :all])
+            [hackernews.fetcher :refer :all])
   (:import [java.net URLEncoder])
   (:use [cheshire.core]))
 
@@ -13,18 +13,26 @@
 (defn stalk
   [username]
   (defn from-coms [a]
-    (let [submission (first (:results (parse-string (:body
-                (http/get (encode-url hn-url :start 0 :limit 2
-                :q (:title (:discussion (:item a))) :type "submission"))) true)))]
-      (prn submission)
-      (prn a)
-      (prn (:id (:discussion a)))
-     ; ((comp write-down clean-article extract-article) submission) TODO (try/catch url 404 and other failures)
-      (:id (:item submission))))
+    (try 
+      (let [submission (first ; should check for second (and so on) if first is not the correct result, i.e. (:id (:item submission)) != (:id (:discussion a)) TODO
+                              (:results (parse-string (:body
+                                (http/get (encode-url hn-url :start 0 :limit 2
+            :q (:title (:discussion (:item a))) :type "submission"))) true)))]
+        (if (and 
+              (not= submission nil) 
+              (= (:id (:item submission)) (:id (:discussion a)))
+              (= (:status (http/get (:url (:item submission)))) 200))
+          (do
+            ((comp write-down clean-article extract-article) submission)
+            (:id (:item submission)))
+          ""))
+      (catch Exception e "")))
   (defn from-subs [a]
-    (do
-     ; ((comp write-down clean-article extract-article) a) TODO
-      (:id (:item a))))
+    (try 
+      (do
+        ((comp write-down clean-article extract-article) a)
+        (:id (:item a)))
+      (catch Exception e "")))
   (loop [start 0
          coms '()
          submissions '()]
