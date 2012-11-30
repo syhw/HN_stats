@@ -13,7 +13,8 @@ with open('../data/' + user + '/interesting_articles.txt') as stalk_f:
 LEMMATIZE = utils.HAS_PATTERN
 lda = None
 if LEMMATIZE:
-    f = open('/Users/gabrielsynnaeve/Dropbox/Public/hn_lemmatized.ldamodel', 'r')
+    #f = open('/Users/gabrielsynnaeve/Dropbox/Public/hn_lemmatized.ldamodel', 'r')
+    f = open('/Users/gabrielsynnaeve/Dropbox/Public/hn40_lemmatized.ldamodel', 'r')
     lda = pickle.load(f)
 else:
     print >> sys.stderr, "ERROR: install pattern"
