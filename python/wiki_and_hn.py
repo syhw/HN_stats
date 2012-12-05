@@ -45,9 +45,6 @@ class WikiHNCorpus(TextCorpus):
         wiki_articles, hn_articles, articles_all = 0, 0, 0
         # ************ Wikipedia ************
         intext, positions = False, 0
-        if LEMMATIZE:
-            lemmatizer = utils.lemmatizer
-            yielded = 0
         for lineno, line in enumerate(bz2.BZ2File(self.wiki_file)):
             if line.startswith('      <text'):
                 intext = True
@@ -66,24 +63,11 @@ class WikiHNCorpus(TextCorpus):
                 if len(text) > WIKI_ARTICLE_MIN_CHARS: # article redirects are pruned here
                     wiki_articles += 1
                     if LEMMATIZE:
-                        _ = lemmatizer.feed(text)
-                        while lemmatizer.has_results():
-                            _, result = lemmatizer.read() # not necessarily the same text as entered above!
-                            positions += len(result)
-                            yielded += 1
-                            yield result
+                        result = utils.lemmatize(text) # text into lemmas here
                     else:
                         result = tokenize(text) # text into tokens here
-                        positions += len(result)
-                        yield result
-
-        if LEMMATIZE:
-            print ("all %i wiki articles read; waiting for lemmatizer to finish the %i remaining jobs" % (wiki_articles, wiki_articles - yielded))
-            while yielded < wiki_articles:
-                _, result = lemmatizer.read()
-                positions += len(result)
-                yielded += 1
-                yield result
+                    positions += len(result)
+                    yield result
 
         print (">>> finished iterating over Wikipedia corpus of %i documents with %i positions (total %i wiki articles before pruning)" % (wiki_articles, positions, articles_all))
         # ************ /Wikipedia ************
@@ -98,24 +82,11 @@ class WikiHNCorpus(TextCorpus):
             articles_all += 1
             hn_articles += 1
             if LEMMATIZE:
-                _ = lemmatizer.feed(hn_text)
-                while lemmatizer.has_results():
-                    _, result = lemmatizer.read() # not necessarily the same text as entered above!
-                    positions += len(result)
-                    yielded += 1
-                    yield result
+                result = utils.lemmatize(hn_text) # text into lemmas here
             else:
                 result = tokenize(hn_text) # text into tokens here
-                positions += len(result)
-                yield result
-
-        if LEMMATIZE:
-            print ("all %i hn_articles read; waiting for lemmatizer to finish the %i remaining jobs" % (hn_articles, hn_articles - yielded))
-            while yielded < hn_articles:
-                _, result = lemmatizer.read()
-                positions += len(result)
-                yielded += 1
-                yield result
+            positions += len(result)
+            yield result
 
         print (">>> finished iterating over HN corpus of %i documents with %i positions" % (hn_articles, positions - positions_after_wiki))
         # ************ /HN articles ************
