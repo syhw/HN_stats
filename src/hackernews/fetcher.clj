@@ -9,6 +9,8 @@
   (:use [cheshire.core])
   (:gen-class))
 
+(tika/parse "http://blogs.wsj.com/digits/2011/02/08/hipmunks-site-targets-travel-%E2%80%9Cagony%E2%80%9D/")
+
 ; http://api.thriftdb.com/api.hnsearch.com/items/_search?filter[field][type][]=submission&start=0&limit=100&filter[fields][create_ts][]=[2010-08-01T00:00:00Z TO 2010-08-01T23:59:59Z]
 (def hn-url "http://api.thriftdb.com/api.hnsearch.com/items/_search?")
 (def folder-prefix "data/")
