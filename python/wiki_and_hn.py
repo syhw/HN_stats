@@ -13,6 +13,11 @@ VOCAB_SIZE = 200000 # 200k
 WIKI_ARTICLE_MIN_CHARS = 500
 LEMMATIZE = utils.HAS_PATTERN
 outputname = 'wiki_hn'
+if LEMMATIZE:
+    print "you have pattern: we will lemmatize ('you were'->'be/VB')"
+    outputname = outputname + "_lemmatized"
+else:
+    print "you don't have pattern: we will tokenize ('you were'->'you','were')"
 
 def tokenize(text):
     return [token.encode('utf8') for token in utils.tokenize(text, lower=True, errors='ignore') if 2 <= len(token) <= 20 and not token.startswith('_')]
@@ -122,21 +127,27 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         print "Usage, see __name__ == '__main__' ==> TODO"
         sys.exit(-1)
-    print ">>> Extracting articles..."
-    corpus = WikiHNCorpus(
-        '/Volumes/Photos/wikipedia/enwiki-latest-pages-articles.xml.bz2',
-        '/Users/gabrielsynnaeve/labs/clojure/hackernews/data')
 
-    corpus.dictionary.save_as_text(outputname + '_wordids.txt')
-    print ">>> Saved dictionary as " + outputname + "_wordids.txt"
+    try:
+        id2token = Dictionary.load_from_text(outputname + '_wordids.txt')
+        mm = MmCorpus(outputname + '_bow.mm')
+        print ">>> Loaded corpus from serialized files"
+    except:
+        print ">>> Extracting articles..."
+        corpus = WikiHNCorpus(
+            '/Volumes/Photos/wikipedia/enwiki-latest-pages-articles.xml.bz2',
+            '/Users/gabrielsynnaeve/labs/clojure/hackernews/data')
 
-    MmCorpus.serialize(outputname + '_bow.mm', corpus, progress_cnt=10000)
-    print ">>> Saved MM corpus as " + outputname + "_bow.mm"
+        corpus.dictionary.save_as_text(outputname + '_wordids.txt')
+        print ">>> Saved dictionary as " + outputname + "_wordids.txt"
 
-    id2token = Dictionary.load_from_text(outputname + '_wordids.txt')
-    mm = MmCorpus(outputname + '_bow.mm')
-    # tfidf = models.TfidfModel(mm, id2word=id2token, normalize=True)
-    del corpus
+        MmCorpus.serialize(outputname + '_bow.mm', corpus, progress_cnt=10000)
+        print ">>> Saved MM corpus as " + outputname + "_bow.mm"
+
+        id2token = Dictionary.load_from_text(outputname + '_wordids.txt')
+        mm = MmCorpus(outputname + '_bow.mm')
+        # tfidf = models.TfidfModel(mm, id2word=id2token, normalize=True)
+        del corpus
 
     lda = models.ldamodel.LdaModel(corpus=mm, id2word=id2token, 
             num_topics=2000, update_every=1, chunksize=50000, passes=10)
