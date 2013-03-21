@@ -1,7 +1,8 @@
 (ns hackernews.core
   (:require [hackernews.name_recog :refer :all]
             [hackernews.stalker :refer :all]
-            [hackernews.fetcher :refer :all])
+            [hackernews.fetcher :refer :all]
+            [clj-time.core :as t])
   (:gen-class))
 
 ; TEST (prn (:url (:item (first (:results (parse-string (:body (http/get (format (encode-url hn-url :start 0 :limit 100)))) true)))))))
@@ -10,6 +11,7 @@
 
 (defn -main [& args]
   ;(fetch-all)
+  (map fetch-loop-dates (for [d (iterate #(t/plus % (t/days 1)) (t/date-time 2009 1 1)) :while (t/before? d (t/date-time 2010 01 01))] (str "[" d "+TO+" (t/plus d (t/days 1)) "]" )))
 ;  (stalk "pg")
 ;  (stalk "kn0thing")
 ;  (stalk "sama")
@@ -20,7 +22,7 @@
 ;  (stalk "tlb")
 ;  (stalk "justin")
 ;  (stalk "harj")
-  (stalk "paul")
+;  (stalk "paul")
 ;  (stalk "aaroniba")
 ;  (stalk "emillon")
 ;  (stalk "snippyhollow")

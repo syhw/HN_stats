@@ -9,7 +9,7 @@
   (:use [cheshire.core])
   (:gen-class))
 
-(tika/parse "http://blogs.wsj.com/digits/2011/02/08/hipmunks-site-targets-travel-%E2%80%9Cagony%E2%80%9D/")
+;(tika/parse "http://blogs.wsj.com/digits/2011/02/08/hipmunks-site-targets-travel-%E2%80%9Cagony%E2%80%9D/")
 
 ; http://api.thriftdb.com/api.hnsearch.com/items/_search?filter[field][type][]=submission&start=0&limit=100&filter[fields][create_ts][]=[2010-08-01T00:00:00Z TO 2010-08-01T23:59:59Z]
 (def hn-url "http://api.thriftdb.com/api.hnsearch.com/items/_search?")
@@ -19,6 +19,8 @@
 ; "score desc" = default of thriftdb: ponders points and num_comments equally
 (def stopwords (set (s/split (slurp "models/common-english-words.txt") #",")))
 (def pgarticles (s/split (slurp "list_articles_pg.txt") #"\n"))
+
+  ;(prn (encode-url hn-url :start 0 :limit 100 :date-interval "[2010-08-01T00:00:00Z TO 2010-08-01T23:59:59Z]"))
 
 (defn encode-url 
   " Encodes the URL for the thrifdb API call with the given url and params "
@@ -151,14 +153,14 @@
   [date-interv]
   (loop [start 0]
     (fetch-articles start :date-interval date-interv)
-    (if (< start 200)
+    (if (< start 900) ; should be ~100 or 200
       (recur (+ start 100))
       ())))
 
 (defn fetch-all []
   " Currently takes PG essays 
   + the top 1000 of HN by points and by num_comments 
-  + the top 200 according to thriftdb score for each day since Oct 9 2006 "
+  + the top 1000 according to thriftdb score for each day since Oct 9 2006 "
   (do
     (map (comp write-down clean-article extract-url) 
          (map (fn [a] [(str "http://paulgraham.com/" a) "paulgraham.com"]) 

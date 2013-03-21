@@ -8,7 +8,10 @@
 
 ; http://api.thriftdb.com/api.hnsearch.com/items/_search?start=0&limit=100&filter[fields][username][]="pg"
 
-(defn stalk
+(defn stalk [uname]
+  (prn "NOT IMPLEMENTED (see stalker.clj + comments)"))
+
+(comment (defn stalk
   [username]
   (defn from-coms [a]
     (try 
@@ -26,7 +29,7 @@
             (prn (str "extracting article (submission): " (:id (:item submission))))
             (prn (str "extracting article (dicussion): " (:id (:discussion a))))
             ((comp write-down clean-article extract-article) submission) ; TODO DEBUG THIS FUCK
-            (:id (:item submission)) /////////////
+            (:id (:item submission)) ;/////////////
              (:id (:discussion a)))
           "")
       )
@@ -62,5 +65,6 @@
           (let [interesting (set (concat coms submissions))]
             (.mkdir (file foldername))
             (with-open [wrtr (writer (str foldername "/interesting_articles.txt"))]
-              (.write wrtr (s/join " " interesting)))))))))
+              (.write wrtr (s/join " " interesting))))))))) 
+         )
        
